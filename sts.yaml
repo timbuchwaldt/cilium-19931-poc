@@ -1,0 +1,58 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx
+  labels:
+    app: nginx
+spec:
+  ports:
+  - port: 80
+    name: web
+  clusterIP: None
+  selector:
+    app: nginx
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-selected
+  labels:
+    app: nginx
+spec:
+  ports:
+  - port: 80
+    name: web
+  clusterIP: None
+  selector:
+    app: nginx
+    selected: "true"
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: web
+spec:
+  selector:
+    matchLabels:
+      app: nginx
+  serviceName: "nginx"
+  replicas: 2
+  minReadySeconds: 0
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      terminationGracePeriodSeconds: 0
+      schedulerName: chaos-cloud
+      containers:
+      - name: nginx
+        image: nginxinc/nginx-unprivileged:latest
+        ports:
+        - containerPort: 8080
+          name: web
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8080
+          periodSeconds: 31
